@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const AuthMiddleware = require('../middleware/authMiddleware');
-const authorize = require('../helpers/authorize');
 const Roles = require('../helpers/role');
 const UsersController = require('../controllers/usersController');
 const TipsController = require('../controllers/tipsController');
@@ -8,16 +7,10 @@ const AlertsController = require('../controllers/alertController');
 const NewsController = require('../controllers/newsController');
 const HospController = require('../controllers/hospController');
 const countyController = require('../controllers/countiesController');
-const { IsLoggedin } = require('../middleware/isauth');
+const GeofenceController = require('../controllers/geoFenceController');
 
 // Routes for authenticated  user
-router.get('/api/v1/home', IsLoggedin, (req, res) => {
-    /* if (req.session.userId) {
-        res.send(req.session);
-        console.log('we are logged in');
-    } else {
-        console.log('backup');
-    } */
+router.get('/api/v1/home', AuthMiddleware.authenticate, (req, res) => {
     res.send(req.session);
     console.log(req.session);
 });
@@ -42,31 +35,88 @@ router.get('/api/v1/loggedout', (req, res) => {
 // Routes for all the tips here
 router.post(
     '/api/v1/tip',
-    IsLoggedin,
-    AuthMiddleware,
-    authorize(Roles.Admin),
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
     TipsController.create
 );
 router.get('/api/v1/tips', TipsController.getAll);
-router.put('/api/v1/tip/:id', TipsController.updateTip);
 router.get('/api/v1/tip/:id', TipsController.getOne);
+router.put(
+    '/api/v1/tip/:id',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    TipsController.updateTip
+);
+router.delete(
+    '/api/v1/tip/:id',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    TipsController.deleteTip
+);
 
 // Routes for the alerts
-router.post('/api/v1/alert', /* authorize(Roles.User), */ AlertsController.create);
+router.post(
+    '/api/v1/alert',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    AlertsController.create
+);
 router.get('/api/v1/alerts', AlertsController.getAll);
-router.put('/api/v1/alert/:id', /* authorize(Roles.Admin), */ AlertsController.updateAlert);
 router.get('/api/v1/alert/:id', AlertsController.getOne);
+router.put(
+    '/api/v1/alert/:id',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    AlertsController.updateAlert
+);
+router.delete(
+    '/api/v1/alert/:id',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    AlertsController.deleteAlert
+);
 
 // Routes for hospital
-router.post('/api/v1/hospital', /* authorize(Roles.Admin, Roles.Doctor), */ HospController.create);
+router.post(
+    '/api/v1/hospital',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    HospController.create
+);
 router.get('/api/v1/hospitals', HospController.getAll);
 router.get('/api/v1/hospital/:id', HospController.getOne);
 router.put(
     '/api/v1/hospital/:id',
-    /* authorize(Roles.Admin, Roles.Doctor), */ HospController.updateHosp
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    HospController.updateHosp
+);
+router.delete(
+    '/api/v1/hospital/:id',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    HospController.deleteHospital
 );
 // covid cases api
-router.post('/api/v1/county_case', /* authorize(Roles.User), */ countyController.create);
+router.post(
+    '/api/v1/county_case',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    countyController.create
+);
 router.get('/api/v1/counties', countyController.getAll);
 router.get('/api/v1/county/:id', countyController.getOne);
+router.delete(
+    '/api/v1/county/:id',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.authorize(Roles.Admin),
+    countyController.deleteCounty
+);
+
+// Routes for geofence
+router.post('/api/v1/geofence', GeofenceController.create);
+router.get('/api/v1/geofence/:id', GeofenceController.getOne);
+router.get('/api/v1/geofences', GeofenceController.getAll);
+router.put('/api/v1/geofence/:id', GeofenceController.update);
+router.delete('/api/v1/geofence/:id', GeofenceController.delete);
 module.exports = router;

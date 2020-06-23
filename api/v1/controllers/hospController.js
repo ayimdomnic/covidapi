@@ -1,75 +1,45 @@
 const Hospital = require('../models/hospModel');
+const {
+    utilGetAll,
+    utilCreate,
+    utilGetOne,
+    utilUpdate,
+    utilDelete,
+} = require('../helpers/utilService');
 
 const HospController = {
     async create(req, res) {
         const { title, lat, lon, description, open } = req.body;
-        const hosp = await Hospital.create({ title, lat, lon, description, open });
-        hosp.save()
-            .then((hospital) => {
-                return res.json({ status: 201, data: [hospital] });
-            })
-            .catch((err) => {
-                console.log('Couldnt create a hospital');
-                res.json(err);
-            });
+        try {
+            await utilCreate(req, res, Hospital, { title, lat, lon, description, open });
+        } catch (error) {
+            res.status(422).json(error.message);
+        }
     },
     async getAll(req, res) {
-        await Hospital.findAll()
-            .then((hosp) => {
-                if (!hosp) {
-                    res.json('No hospitals found');
-                }
-                res.status(200).json({
-                    status: 200,
-                    data: hosp,
-                });
-            })
-            .catch(function (err) {
-                res.status(400).json({
-                    status: 400,
-                    err,
-                });
-            });
+        await utilGetAll(req, res, Hospital);
     },
     async getOne(req, res) {
-        const _id = req.params.id;
-        await Hospital.findOne({
-            where: {
-                id: _id,
-            },
-        })
-            .then((hosp) => {
-                if (!hosp) {
-                    res.json('No hospital was found');
-                } else {
-                    console.log(`retrived hospital ${JSON.stringify(hosp, null, 2)}`);
-                    res.json(hosp);
-                }
-            })
-            .catch((err) => {
-                console.log(err);
-                res.json('No hospital was found');
-            });
+        const { id } = req.params;
+        await utilGetOne(req, res, Hospital, id);
     },
     async updateHosp(req, res) {
         const { title, lat, lon, description, open } = req.body;
-        const _id = req.params.id;
+        const { id } = req.params;
         const values = { title, lat, lon, description, open };
-        Hospital.findOne({ where: { id: _id } }).then((_hosp) => {
-            if (!_hosp) {
-                console.log('No hospitals found');
-            }
-            console.log(`retrived tip ${JSON.stringify(_hosp, null, 2)}`);
-            Hospital.update(values, { where: { id: _id }, returning: true, plain: true })
-                .then((updatedHosp) => {
-                    res.json(updatedHosp);
-                })
-                .catch((err) => {
-                    // next(err);
-                    res.json('Could not update the hospitals');
-                    console.log(err);
-                });
-        });
+        try {
+            await utilUpdate(req, res, Hospital, values, id);
+        } catch (error) {
+            res.status(422).json(error);
+        }
+    },
+    async deleteHospital(req, res) {
+        const { id } = req.params;
+        try {
+            await utilDelete(req, res, Hospital, id);
+        } catch (error) {
+            res.status(422).json(error);
+        }
     },
 };
 module.exports = HospController;
